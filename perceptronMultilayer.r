@@ -84,9 +84,13 @@ processaPerceptron <- function(classe1, classe2, classe3, classe4, classe5, clas
   txAcertosCinco<-c()
   txAcertosSeis<-c()
   
-  #Criando uma matriz aleatória de pesos
+  #Criando uma matriz aleatória de pesos da camada intermediária
   #OBS: Os pesos da linha 34 são os bias
   wPesos<-matrix(runif(34*6), nrow = 34, ncol = 6) 
+  
+  #Criando uma matriz aleatória de pesos da camada de saida
+  #OBS: Os pesos da linha 7 são os bias
+  wPesos<-matrix(runif(7*3), nrow = 7, ncol = 3) 
   
   numeroRodadas = 0
   #Laço para rodar n vezes
@@ -108,8 +112,11 @@ processaPerceptron <- function(classe1, classe2, classe3, classe4, classe5, clas
     
     #return(r)
     
-    #Criando a nova matriz de pesos
+    #Criando a nova matriz de pesos camada intermediária
     wPesosNovo<-matrix((34*6), nrow = 34, ncol = 6) 
+    
+    #Criando a nova matriz de pesos camada de saida
+    mPesosNovo<-matrix((7*3), nrow = 7, ncol = 3) 
     
     for (i in 1: (nrow(dataTreino))) {
       #Recebe a linha atual do conjunto de treino
