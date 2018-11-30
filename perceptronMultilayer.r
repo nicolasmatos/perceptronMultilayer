@@ -64,15 +64,27 @@ classeDesejada <- function(classe) {
   return(desejado)
 }
 
-aprendizagem <- function(wPesos, xLinhaTreino, vE, pA) {
-  wPesosNovo<-matrix((34*6), nrow = 34, ncol = 6) 
-  for (i in 1:6) {
+aprendizagem <- function(wPesos, mPesos, xLinhaTreino, yEntrada, vOsL, vECs, pA) {
+  wPesosNovo<-matrix((34*19), nrow = 34, ncol = 19) 
+  for (i in 1:19) {
     for (j in 1:34) {
-      wPesosNovo[j,i] = wPesos[j,i] + (pA * vE[i] * xLinhaTreino[,j])
+      wPesosNovo[j,i] = wPesos[j,i] + (pA * vECs[i] * (yEntrada[,i] * (1 - yEntrada[,i])) * xLinhaTreino[,j])
     }
   }
   
-  return(wPesosNovo)
+  mPesosNovo<-matrix((20*6), nrow = 20, ncol = 6) 
+  for (i in 1:6) {
+    for (j in 1:20) {
+      mPesosNovo[j,i] = mPesos[j,i] + (pA * vECs[i] * (vOsL[i] * (1 - vOsL[i])) * yEntrada[,j])
+    }
+  }
+  
+  r = list()
+  r$wPesosNovo = wPesosNovo
+  r$mPesosNovo = mPesosNovo
+  r$wPesosNovo = wPesosNovo
+  
+  return(r)
 }
 
 processaPerceptron <- function(classe1, classe2, classe3, classe4, classe5, classe6, n, pA) {
@@ -86,11 +98,11 @@ processaPerceptron <- function(classe1, classe2, classe3, classe4, classe5, clas
   
   #Criando uma matriz aleatória de pesos da camada intermediária
   #OBS: Os pesos da linha 34 são os bias
-  wPesos<-matrix(runif(34*6), nrow = 34, ncol = 6) 
+  wPesos<-matrix(runif(34*19), nrow = 34, ncol = 19) 
   
   #Criando uma matriz aleatória de pesos da camada de saida
   #OBS: Os pesos da linha 7 são os bias
-  wPesos<-matrix(runif(7*3), nrow = 7, ncol = 3) 
+  mPesos<-matrix(runif(20*6), nrow = 20, ncol = 6) 
   
   numeroRodadas = 0
   #Laço para rodar n vezes
@@ -113,10 +125,10 @@ processaPerceptron <- function(classe1, classe2, classe3, classe4, classe5, clas
     #return(r)
     
     #Criando a nova matriz de pesos camada intermediária
-    wPesosNovo<-matrix((34*6), nrow = 34, ncol = 6) 
+    wPesosNovo<-matrix((34*19), nrow = 34, ncol = 19) 
     
     #Criando a nova matriz de pesos camada de saida
-    mPesosNovo<-matrix((7*3), nrow = 7, ncol = 3) 
+    mPesosNovo<-matrix((20*6), nrow = 20, ncol = 6) 
     
     for (i in 1: (nrow(dataTreino))) {
       #Recebe a linha atual do conjunto de treino
@@ -130,40 +142,64 @@ processaPerceptron <- function(classe1, classe2, classe3, classe4, classe5, clas
       for (j in 1:33) {
         vX[j] = as.numeric(gsub(",", ".", linhaTreino[[j]]))
       }
+      
       #Adicionando o valor para representar o x0
       vX[34] = -1
       xLinhaTreino = matrix(vX, 1, 34)
       
-      #Multiplicando a linha de entrada pela matriz de pesos
+      #Multiplicando a linha de entrada da camada intermediária pela matriz de pesos dos neuronios da camada intermediária
       u = xLinhaTreino %*% wPesos
       
-      #Montando o y
-      vY<-c()
-      for (j in 1:6) {
-        if(u[,j] <= 0.0) {
-          vY[j] = 0
+      #Montando o y pela formula da sigmóide logística
+      vYsL<-c()
+      for (j in 1:19) {
+        vYsL[j] = 1 / (1 + exp(-1 * u[,j]))
+      }
+      
+      #Adicionando o valor para representar o x0
+      vYsL[20] = -1
+      yEntrada = matrix(vYsL, 1, 20)
+      
+      #Multiplicando a linha de entrada da camada de saida pela matriz de pesos dos neuronios da camada de saida
+      a = yEntrada %*% mPesos
+      
+      #Montando o 'o' pela formula da sigmóide logística
+      vOsL<-c()
+      vO<-c()
+      for(j in 1:6) {
+        sL = 1 / (1 + exp(-1 * a[,j]))
+        vOsL[j] = sL
+        if (sL > 0.5) {
+          vO[j] = 1
         }
         else {
-          vY[j] = 1
+          vO[j] = 0
         }
       }
       
-      #Gerando o vetor de erro(Vetor desejado - Vetor obtido)
-      vE = vD - vY
+      #Gerando o vetor de erro da camada de saida(Vetor desejado - Vetor obtido)
+      vECs = vD - vO
       
       #Aplicado a regra de aprendizagem para atualização dos pesos
-      wPesosNovo = aprendizagem(wPesos, xLinhaTreino, vE, pA)
+      pesosNovos = aprendizagem(wPesos, mPesos, xLinhaTreino, yEntrada, vOsL, vECs, pA)
+      wPesosNovo = pesosNovos$wPesosNovo
+      mPesosNovo = pesosNovos$mPesosNovo
       
-      #r = list()
-      #r$xLinhaTreino = xLinhaTreino
-      #r$wPesos = wPesos
-      #r$wPesosNovo = wPesosNovo
-      #r$u = u
-      #r$d = vD
-      #r$y = vY
-      #r$e = vE
+      r = list()
+      r$xLinhaTreino = xLinhaTreino
+      r$wPesos = wPesos
+      r$wPesosNovo = wPesosNovo
+      r$u = u
+      r$vYsL = vYsL
+      r$yEntrada = yEntrada
+      r$mPesos = mPesos
+      r$mPesosNovo = mPesosNovo
+      r$a = a
+      r$vO = vO
+      r$d = vD
+      r$e = vECs
       
-      #return(r)
+      return(r)
     }
     
     #Variáveis para controlar os acertos do algoritmo
