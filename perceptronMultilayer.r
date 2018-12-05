@@ -68,7 +68,7 @@ aprendizagem <- function(wPesos, mPesos, xLinhaTreino, yEntrada, vOsL, vECs, pA)
   wPesosNovo<-matrix((34*19), nrow = 34, ncol = 19) 
   for (i in 1:19) {
     for (j in 1:34) {
-      wPesosNovo[j,i] = wPesos[j,i] + (pA * vECs[i] * (yEntrada[,i] * (1 - yEntrada[,i])) * xLinhaTreino[,j])
+      wPesosNovo[j,i] = wPesos[j,i] + (pA * 1 * (yEntrada[,i] * (1 - yEntrada[,i])) * xLinhaTreino[,j])
     }
   }
   
@@ -82,7 +82,6 @@ aprendizagem <- function(wPesos, mPesos, xLinhaTreino, yEntrada, vOsL, vECs, pA)
   r = list()
   r$wPesosNovo = wPesosNovo
   r$mPesosNovo = mPesosNovo
-  r$wPesosNovo = wPesosNovo
   
   return(r)
 }
@@ -185,21 +184,21 @@ processaPerceptron <- function(classe1, classe2, classe3, classe4, classe5, clas
       wPesosNovo = pesosNovos$wPesosNovo
       mPesosNovo = pesosNovos$mPesosNovo
       
-      r = list()
-      r$xLinhaTreino = xLinhaTreino
-      r$wPesos = wPesos
-      r$wPesosNovo = wPesosNovo
-      r$u = u
-      r$vYsL = vYsL
-      r$yEntrada = yEntrada
-      r$mPesos = mPesos
-      r$mPesosNovo = mPesosNovo
-      r$a = a
-      r$vO = vO
-      r$d = vD
-      r$e = vECs
+      #r = list()
+      #r$xLinhaTreino = xLinhaTreino
+      #r$wPesos = wPesos
+      #r$wPesosNovo = wPesosNovo
+      #r$u = u
+      #r$vYsL = vYsL
+      #r$yEntrada = yEntrada
+      #r$mPesos = mPesos
+      #r$mPesosNovo = mPesosNovo
+      #r$a = a
+      #r$vO = vO
+      #r$d = vD
+      #r$e = vECs
       
-      return(r)
+      #return(r)
     }
     
     #Variáveis para controlar os acertos do algoritmo
@@ -239,19 +238,35 @@ processaPerceptron <- function(classe1, classe2, classe3, classe4, classe5, clas
       #Multiplicando a linha de entrada pela nova matriz de pesos
       u = xLinhaTeste %*% wPesosNovo
       
-      #Montando o y
-      vY<-c()
-      for (j in 1:6) {
-        if(u[,j] <= 0.0) {
-          vY[j] = 0
+      #Montando o y pela formula da sigmóide logística
+      vYsL<-c()
+      for (j in 1:19) {
+        vYsL[j] = 1 / (1 + exp(-1 * u[,j]))
+      }
+      
+      #Adicionando o valor para representar o x0
+      vYsL[20] = -1
+      yEntrada = matrix(vYsL, 1, 20)
+      
+      #Multiplicando a linha de entrada da camada de saida pela matriz de pesos dos neuronios da camada de saida
+      a = yEntrada %*% mPesos
+      
+      #Montando o 'o' pela formula da sigmóide logística
+      vOsL<-c()
+      vO<-c()
+      for(j in 1:6) {
+        sL = 1 / (1 + exp(-1 * a[,j]))
+        vOsL[j] = sL
+        if (sL > 0.5) {
+          vO[j] = 1
         }
         else {
-          vY[j] = 1
+          vO[j] = 0
         }
       }
       
-      #Gerando o vetor de erro(Vetor desejado - Vetor obtido)
-      vE = vD - vY
+      #Gerando o vetor de erro da camada de saida(Vetor desejado - Vetor obtido)
+      vECs = vD - vO
       
       #Verificando quantas chamadas teve de cada classe
       if (nClasse == 1) {
@@ -274,7 +289,7 @@ processaPerceptron <- function(classe1, classe2, classe3, classe4, classe5, clas
       }
       
       #Verificando se o algoritmo acertou na classificação
-      if (vE[1] == 0 && vE[2] == 0 && vE[3] == 0 && vE[4] == 0 && vE[5] == 0 && vE[6] == 0) {
+      if (vECs[1] == 0 && vECs[2] == 0 && vECs[3] == 0 && vECs[4] == 0 && vECs[5] == 0 && vECs[6] == 0) {
         if (nClasse == 1) {
           qntAcertosUm = qntAcertosUm + 1
         }
@@ -357,6 +372,7 @@ processaPerceptron <- function(classe1, classe2, classe3, classe4, classe5, clas
     }
     else {
       wPesos = wPesosNovo
+      mPesos = mPesosNovo
     }
   }
   
